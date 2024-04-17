@@ -17,13 +17,15 @@ py_trees objects and ros messages.
 # Imports
 ##############################################################################
 
-import py_trees
-import py_trees_ros_interfaces.msg  # noqa
-import rclpy
 import typing
-import unique_identifier_msgs.msg
 import uuid
+from typing import Any, List, Tuple, Type, Union
 
+import py_trees
+import rospy
+import uuid_msgs.msg
+
+import py_trees_ros_interfaces.msg  # noqa
 
 ##############################################################################
 # <etjpds
@@ -50,12 +52,12 @@ def activity_stream_to_msgs() -> typing.List[py_trees_ros_interfaces.msg.Activit
     return activity_stream_msgs
 
 
-def behaviour_type_to_msg_constant(behaviour: py_trees.behaviour.Behaviour):
+def behaviour_type_to_msg_constant(behaviour: py_trees.behaviour.Behaviour) -> int:
     """
     Convert a behaviour class type to a message constant.
 
     Args:
-        behaviour: investigate the type of this behaviour
+        behaviour (:class:`~py_trees.behaviour.Behaviour`): investigate the type of this behaviour
 
     Returns:
         :obj:`uint8`: from the type constants in :class:`py_trees_ros_interfaces.msg.Behaviour`
@@ -129,8 +131,11 @@ def additional_detail_to_str(behaviour: py_trees.behaviour.Behaviour) -> str:
         except AttributeError:
             pass
         try:
-            indices = [str(behaviour.children.index(child)) for child in behaviour.policy.children]
-            policy += "({})".format(', '.join(sorted(indices)))
+            indices = [
+                str(behaviour.children.index(child))
+                for child in behaviour.policy.children
+            ]
+            policy += "({})".format(", ".join(sorted(indices)))
         except AttributeError:
             pass
         return policy
@@ -143,12 +148,12 @@ def additional_detail_to_str(behaviour: py_trees.behaviour.Behaviour) -> str:
     return ""
 
 
-def status_enum_to_msg_constant(status: py_trees.common.Status):
+def status_enum_to_msg_constant(status: py_trees.common.Status) -> int:
     """
     Convert a status to a message constant.
 
     Args:
-        status: status enum of a behaviour
+        status (:class:`~py_trees.common.Status`): status enum of a behaviour
 
     Returns:
         :obj:`uint8`: from the status constants in :class:`py_trees_ros_interfaces.msg.Behaviour`
@@ -192,12 +197,12 @@ def msg_constant_to_status_enum(value: int) -> py_trees.common.Status:
         raise TypeError("invalid status specified in message [{}]".format(value))
 
 
-def blackbox_enum_to_msg_constant(blackbox_level: py_trees.common.BlackBoxLevel):
+def blackbox_enum_to_msg_constant(blackbox_level: py_trees.common.BlackBoxLevel) -> int:
     """
     Convert a blackbox level enum to a message constant.
 
     Args:
-        blackbox_level: blackbox level of a behaviour
+        blackbox_level (:class:`~py_trees.common.BlackboxLevel`): blackbox level of a behaviour
 
     Returns:
         :obj:`uint8`: from the type constants in :class:`py_trees_ros_interfaces.msg.Behaviour`
@@ -236,10 +241,12 @@ def msg_constant_to_blackbox_level_enum(value: int) -> py_trees.common.BlackBoxL
     elif value == py_trees_ros_interfaces.msg.Behaviour.BLACKBOX_LEVEL_NOT_A_BLACKBOX:
         return py_trees.common.BlackBoxLevel.NOT_A_BLACKBOX
     else:
-        raise TypeError("invalid blackbox level specified in message [{}]".format(value))
+        raise TypeError(
+            "invalid blackbox level specified in message [{}]".format(value)
+        )
 
 
-def uuid4_to_msg(uuid4: uuid.UUID=uuid.uuid4()) -> unique_identifier_msgs.msg.UUID:
+def uuid4_to_msg(uuid4: uuid.UUID = uuid.uuid4()) -> uuid_msgs.msg.UniqueID:
     """
     Convert a uuid4 python object to a ros unique identifier, UUID type.
 
@@ -249,10 +256,12 @@ def uuid4_to_msg(uuid4: uuid.UUID=uuid.uuid4()) -> unique_identifier_msgs.msg.UU
     Returns:
         the ros message type
     """
-    return unique_identifier_msgs.msg.UUID(uuid=list(uuid4.bytes))
+    msg = uuid_msgs.msg.UniqueID()
+    msg.uuid = list(uuid4.bytes)
+    return msg
 
 
-def msg_to_uuid4(msg: unique_identifier_msgs.msg.UUID) -> uuid.UUID:
+def msg_to_uuid4(msg: uuid_msgs.msg.UniqueID) -> uuid.UUID:
     """
     Convert a uuid4 python object to a ros unique identifier, UUID type.
 
@@ -265,60 +274,79 @@ def msg_to_uuid4(msg: unique_identifier_msgs.msg.UUID) -> uuid.UUID:
     return uuid.UUID(bytes=bytes(msg.uuid), version=4)
 
 
-def behaviour_to_msg(behaviour: py_trees.behaviour.Behaviour) -> py_trees_ros_interfaces.msg.Behaviour:
+def behaviour_to_msg(
+    behaviour: py_trees.behaviour.Behaviour,
+) -> py_trees_ros_interfaces.msg.Behaviour:
     """
     Convert a behaviour to a message.
 
     Args:
-        behaviour: behaviour to convert
+        behaviour (:class:`~py_trees.behaviour.Behaviour`): behaviour to convert
 
     Returns:
         a ros message representation of a behaviour
     """
     msg = py_trees_ros_interfaces.msg.Behaviour()
     msg.name = behaviour.name
-    msg.class_name = str(behaviour.__module__) + '.' + str(type(behaviour).__name__)
+    msg.class_name = str(behaviour.__module__) + "." + str(type(behaviour).__name__)
     msg.own_id = uuid4_to_msg(behaviour.id)
-    msg.parent_id = uuid4_to_msg(behaviour.parent.id) if behaviour.parent else unique_identifier_msgs.msg.UUID()
-    msg.child_ids = [uuid4_to_msg(child.id) for child in behaviour.iterate(direct_descendants=True) if not child.id == behaviour.id]
+    msg.parent_id = (
+        uuid4_to_msg(behaviour.parent.id)
+        if behaviour.parent
+        else uuid_msgs.msg.UniqueID()
+    )
+    msg.child_ids = [
+        uuid4_to_msg(child.id)
+        for child in behaviour.iterate(direct_descendants=True)
+        if not child.id == behaviour.id
+    ]
 
     tip = behaviour.tip()
     # tip_id is empty if the behaviour is invalid or if it is a valid leaf
     if tip is not None and tip != behaviour:
         msg.tip_id = uuid4_to_msg(tip.id)
+
+    # NB: MM had deleted this block in ros_utilities.py
     # else it gets the 'zero' uuid
     if isinstance(behaviour, py_trees.composites.Composite):
         if behaviour.current_child is not None:
             msg.current_child_id = uuid4_to_msg(behaviour.current_child.id)
+
     msg.type = behaviour_type_to_msg_constant(behaviour)
     msg.blackbox_level = blackbox_enum_to_msg_constant(behaviour.blackbox_level)
     msg.status = status_enum_to_msg_constant(behaviour.status)
+
+    # NB: MM had deleted this block in ros_utilities.py
     msg.additional_detail = additional_detail_to_str(behaviour)
-    msg.message = behaviour.feedback_message
+    msg.message = (
+        behaviour.feedback_message
+    )  # apparently crashes rqt thanks to Pointcloud
     msg.blackboard_access = []
     for blackboard in behaviour.blackboards:
         for key in blackboard.read:
             access_info = py_trees_ros_interfaces.msg.KeyValue(
                 key=key,
-                value=py_trees_ros_interfaces.msg.Behaviour.BLACKBOARD_ACCESS_READ  # noqa
+                value=py_trees_ros_interfaces.msg.Behaviour.BLACKBOARD_ACCESS_READ,  # noqa
             )
             msg.blackboard_access.append(access_info)
         for key in blackboard.write:
             access_info = py_trees_ros_interfaces.msg.KeyValue(
                 key=key,
-                value=py_trees_ros_interfaces.msg.Behaviour.BLACKBOARD_ACCESS_WRITE  # noqa
+                value=py_trees_ros_interfaces.msg.Behaviour.BLACKBOARD_ACCESS_WRITE,  # noqa
             )
             msg.blackboard_access.append(access_info)
         for key in blackboard.exclusive:
             access_info = py_trees_ros_interfaces.msg.KeyValue(
                 key=key,
-                value=py_trees_ros_interfaces.msg.Behaviour.BLACKBOARD_ACCESS_EXCLUSIVE_WRITE  # noqa
+                value=py_trees_ros_interfaces.msg.Behaviour.BLACKBOARD_ACCESS_EXCLUSIVE_WRITE,  # noqa
             )
             msg.blackboard_access.append(access_info)
     return msg
 
 
-def msg_to_behaviour(msg: py_trees_ros_interfaces.msg.Behaviour) -> py_trees.behaviour.Behaviour:
+def msg_to_behaviour(
+    msg: py_trees_ros_interfaces.msg.Behaviour,
+) -> py_trees.behaviour.Behaviour:
     """
     Convert behaviour message to a py_trees behaviour. This doesn't completely
     recreate the original behaviour (doesn't have any of the custom state), but
@@ -336,7 +364,7 @@ def msg_to_behaviour(msg: py_trees_ros_interfaces.msg.Behaviour) -> py_trees.beh
         behaviour = py_trees.decorators.PassThrough(
             name=msg.name,
             # to be replaced with the proper entity in a second pass
-            child=py_trees.behaviours.Dummy()
+            child=py_trees.behaviours.Dummy(),
         )
     elif BehaviourType == py_trees.composites.Sequence:
         memory = True if msg.additional_detail == "WithMemory" else False
@@ -345,7 +373,9 @@ def msg_to_behaviour(msg: py_trees_ros_interfaces.msg.Behaviour) -> py_trees.beh
         memory = True if msg.additional_detail == "WithMemory" else False
         behaviour = BehaviourType(name=msg.name, memory=memory)
     elif BehaviourType == py_trees.composites.Parallel:
-        behaviour = BehaviourType(name=msg.name, policy=py_trees.common.ParallelPolicy.SuccessOnAll())
+        behaviour = BehaviourType(
+            name=msg.name, policy=py_trees.common.ParallelPolicy.SuccessOnAll()
+        )
     else:
         behaviour = py_trees.behaviours.Dummy(name=msg.name)
     behaviour.id = msg_to_uuid4(msg.own_id)
@@ -354,30 +384,34 @@ def msg_to_behaviour(msg: py_trees_ros_interfaces.msg.Behaviour) -> py_trees.beh
     behaviour.status = msg_constant_to_status_enum(msg.status)
     behaviour.blackbox_level = msg_constant_to_blackbox_level_enum(msg.blackbox_level)
     behaviour.feedback_message = msg.message
+
     return behaviour
 
 
-def rclpy_time_to_float(time: rclpy.time.Time) -> float:
-    """
-    Convert a ros2 time (seconds/nanoseconds) to a float.
-
-    Args:
-        time: time to convert
-
-    Return:
-        time (seconds) as a float
-    """
-    return float(time.nanoseconds) / 1e9
-
-
-def rclpy_duration_to_float(duration: rclpy.time.Duration) -> float:
-    """
-    Convert a ros2 duration (seconds/nanoseconds) to a float.
-
-    Args:
-        time: time to convert
-
-    Return:
-        time (seconds) as a float
-    """
-    return float(duration.nanoseconds) / 1e9
+# These two aren't necessary in the backport; instead, update trees.py where they're used
+# rclpy_time_to_float: rospy.Time.to_sec()
+# rclpy_duration_to_float: rospy.Duration.to_sec()
+# def rclpy_time_to_float(time: rclpy.time.Time) -> float:
+#     """
+#     Convert a ros2 time (seconds/nanoseconds) to a float.
+#
+#     Args:
+#         time: time to convert
+#
+#     Return:
+#         time (seconds) as a float
+#     """
+#     return float(time.nanoseconds) / 1e9
+#
+#
+# def rclpy_duration_to_float(duration: rclpy.time.Duration) -> float:
+#     """
+#     Convert a ros2 duration (seconds/nanoseconds) to a float.
+#
+#     Args:
+#         time: time to convert
+#
+#     Return:
+#         time (seconds) as a float
+#     """
+#     return float(duration.nanoseconds) / 1e9

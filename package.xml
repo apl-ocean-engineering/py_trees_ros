@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="3">
+<package format="2">
   <name>py_trees_ros</name>
   <version>2.2.2</version>
   <description>
-    ROS2 extensions and behaviours for py_trees.
+    ROS extensions and behaviours for py_trees.
   </description>
 
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
@@ -30,11 +30,20 @@
   <!-- core dependencies -->
   <depend>py_trees</depend>
   <depend>py_trees_ros_interfaces</depend>
+  <depend>std_msgs</depend>
+
+  <!-- message renamed in ROS1 to ROS2 switch-->
+  <!-- <depend>unique_identifier_msgs</depend> -->
+  <depend>uuid_msgs</depend>
+
+  <!-- ROS2 dependencies -->
+  <!--
   <depend>rcl_interfaces</depend>
   <depend>rclpy</depend>
   <depend>ros2topic</depend>
-  <depend>std_msgs</depend>
-  <depend>unique_identifier_msgs</depend>
+  -->
+  <!-- ROS1 dependencies -->
+  <depend>rospy</depend>
 
   <!-- behaviour dependencies (subscribers, transforms, ...) -->
   <depend>geometry_msgs</depend>
@@ -44,6 +53,9 @@
   <!-- testing dependencies -->
 
   <export>
+    <!-- ROS2 -->
+    <!--
     <build_type>ament_python</build_type>
+    -->
   </export>
 </package>

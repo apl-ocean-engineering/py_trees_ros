@@ -25,10 +25,12 @@ runs its own method on the behaviour to do as it wishes - logging, introspecting
 ##############################################################################
 
 
-import py_trees.visitors
-import py_trees_ros_interfaces.msg as py_trees_msgs
-import rclpy
 import time
+
+import py_trees.visitors
+import rospy
+
+import py_trees_ros_interfaces.msg as py_trees_msgs
 
 from . import conversions
 
@@ -42,13 +44,10 @@ class SetupLogger(py_trees.visitors.VisitorBase):
     Use as a visitor to :meth:`py_trees_ros.trees.TreeManager.setup`
     to log the name and timings of each behaviours' setup
     to the ROS debug channel.
-
-    Args:
-        node: an rclpy node that will provide debug logger
     """
-    def __init__(self, node: rclpy.node.Node):
+
+    def __init__(self):
         super().__init__(full=True)
-        self.node = node
 
     def initialise(self):
         """
@@ -59,14 +58,14 @@ class SetupLogger(py_trees.visitors.VisitorBase):
 
     def run(self, behaviour):
         current_time = time.monotonic()
-        self.node.get_logger().debug(
+        rospy.logdebug(
             "'{}'.setup: {:.4f}s".format(behaviour.name, current_time - self.last_time)
         )
         self.last_time = current_time
 
     def finalise(self):
         current_time = time.monotonic()
-        self.node.get_logger().debug(
+        rospy.logdebug(
             "Total tree setup time: {:.4f}s".format(current_time - self.start_time)
         )
 
@@ -79,6 +78,7 @@ class TreeToMsgVisitor(py_trees.visitors.VisitorBase):
     Attributes:
         tree (:class:`py_trees_msgs.msg.BehaviourTree`): tree representation in message form
     """
+
     def __init__(self):
         """
         Well
