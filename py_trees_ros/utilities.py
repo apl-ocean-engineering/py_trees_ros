@@ -22,6 +22,7 @@ import time
 import typing
 
 import rospy
+import rosservice
 
 import py_trees_ros_interfaces.msg as py_trees_msgs  # noqa
 import py_trees_ros_interfaces.srv as py_trees_srvs  # noqa
@@ -36,66 +37,69 @@ from . import exceptions
 # # QUESTION(lindzey): how is this actually used?
 # # => Needed by blackboard, to find list/open/close Blackboard services that might be in
 # #    different namespaces.
-# def find_service(
-#     node,  # TODO(lindzey): Get rid of this parameter!
-#     service_type: str,
-#     namespace: typing.Optional[str] = None,
-#     timeout: float = 0.5,
-# ):
-#     """
-#     Discover a service of the specified type and if necessary, under the specified
-#     namespace.
+# # => I've looked, and can't find an equivalent to rospy.get_published_topics()
+# # => oh! import rosservice; rosservice.get_service_list()
+def find_service(
+    service_type: str,
+    namespace: typing.Optional[str] = None,
+    timeout: float = 0.5,
+):
+    """
+    Discover a service of the specified type and if necessary, under the specified
+    namespace.
 
-#     Args:
-#         node (:class:`rclpy.node.Node`): nodes have the discovery methods
-#         service_type (:obj:`str`): primary lookup hint
-#         namespace (:obj:`str`): secondary lookup hint
-#         timeout: immediately post node creation, can take time to discover the graph (sec)
+    Args:
+        service_type (:obj:`str`): primary lookup hint
+        namespace (:obj:`str`): secondary lookup hint
+        timeout: immediately post node creation, can take time to discover the graph (sec)
 
-#     Returns:
-#         :obj:`str`: fully expanded service name
+    Returns:
+        :obj:`str`: fully expanded service name
 
-#     Raises:
-#         :class:`~py_trees_ros.exceptions.NotFoundError`: if no services were found
-#         :class:`~py_trees_ros.exceptions.MultipleFoundError`: if multiple services were found
-#     """
-#     # TODO: follow the pattern of ros2cli to create a node without the need to init
-#     # rcl (might get rid of the magic sleep this way). See:
-#     #    https://github.com/ros2/ros2cli/blob/master/ros2service/ros2service/verb/list.py
-#     #    https://github.com/ros2/ros2cli/blob/master/ros2cli/ros2cli/node/strategy.py
+    Raises:
+        :class:`~py_trees_ros.exceptions.NotFoundError`: if no services were found
+        :class:`~py_trees_ros.exceptions.MultipleFoundError`: if multiple services were found
+    """
+    # TODO: follow the pattern of ros2cli to create a node without the need to init
+    # rcl (might get rid of the magic sleep this way). See:
+    #    https://github.com/ros2/ros2cli/blob/master/ros2service/ros2service/verb/list.py
+    #    https://github.com/ros2/ros2cli/blob/master/ros2cli/ros2cli/node/strategy.py
 
-#     loop_period = 0.1  # seconds
-#     start_time = rospy.Time.now()
-#     service_names = []
-#     while rospy.Time.now() - start_time < rospy.Duration.from_sec(timeout):
-#         # TODO(lindzey): If we need this function, find the ROS1 equivalent to this!
-#         #   (it has to be possible, thanks to `rosservice list`)
-#         # Returns a list of the form: [('exchange/blackboard', ['std_msgs/String'])
-#         service_names_and_types = node.get_service_names_and_types()
-#         service_names = [
-#             name for name, types in service_names_and_types if service_type in types
-#         ]
-#         if namespace is not None:
-#             # QUESTION(lindzey): Why isn't this "startswith", rather than "in"?
-#             service_names = [name for name in service_names if namespace in name]
-#         if service_names:
-#             break
-#         rospy.sleep(loop_period)
+    loop_period = 0.1  # seconds
+    start_time = rospy.Time.now()
+    service_names = []
+    while rospy.Time.now() - start_time < rospy.Duration.from_sec(timeout):
+        # TODO(lindzey): If we need this function, find the ROS1 equivalent to this!
+        #   (it has to be possible, thanks to `rosservice list`)
+        # Returns a list of the form: [('exchange/blackboard', ['std_msgs/String'])
+        all_service_names = rosservice.get_service_list()
+        for service_name in all_service_names:
+            tt = rosservice.get_service_type(service_name)
+            if service_type == tt:
+                service_names.append(service_name)
 
-#     if not service_names:
-#         raise exceptions.NotFoundError(
-#             "service not found [type: {}]".format(service_type)
-#         )
-#     elif len(service_names) == 1:
-#         return service_names[0]
-#     else:
-#         raise exceptions.MultipleFoundError(
-#             "multiple services found [type: {}]".format(service_type)
-#         )
+        if namespace is not None:
+            # QUESTION(lindzey): Why isn't this "startswith", rather than "in"?
+            service_names = [name for name in service_names if namespace in name]
+        if service_names:
+            break
+        rospy.sleep(loop_period)
+
+    if not service_names:
+        raise exceptions.NotFoundError(
+            "service not found [type: {}]".format(service_type)
+        )
+    elif len(service_names) == 1:
+        return service_names[0]
+    else:
+        raise exceptions.MultipleFoundError(
+            "multiple services found [type: {}]".format(service_type)
+        )
 
 
 # # NOTE(lindzey): This appears to be unused in the py_trees_ros codebase,
 # #    other than a TODO in echo.py to switch to using this.
+# # Would probably use rospy.get_published_topics()
 # def find_topics(
 #     node, topic_type: str, namespace: typing.Optional[str] = None, timeout: float = 0.5
 # ) -> typing.List[str]:

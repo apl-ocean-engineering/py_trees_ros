@@ -46,12 +46,9 @@ class SubBlackboard(object):
     flag when there have been changes. This is a nice to have that only
     works if the blackboard contains fundamental variables (i.e. objects
     that can be pickled).
-
-    Args:
-        node: the node handle for ros logging of warnings if needed
     """
 
-    def __init__(self, node):
+    def __init__(self):
         self.is_changed = False
         self.variable_names = set()
         self.pickled_storage = None
@@ -499,7 +496,6 @@ class BlackboardWatcher(object):
         for service_name in self.service_names.keys():
             # can raise NotFoundError and MultipleFoundError
             self.service_names[service_name] = utilities.find_service(
-                node=self.node,
                 service_type=self.service_type_strings[service_name],
                 namespace=self.namespace_hint,
                 timeout=timeout_sec,
