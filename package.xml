@@ -41,6 +41,7 @@
   <depend>rcl_interfaces</depend>
   <depend>rclpy</depend>
   <depend>ros2topic</depend>
+  <depend>tf2_ros_py</depend>
   -->
   <!-- ROS1 dependencies -->
   <depend>rospy</depend>
@@ -48,7 +49,6 @@
   <!-- behaviour dependencies (subscribers, transforms, ...) -->
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
-  <depend>tf2_ros_py</depend>
 
   <!-- testing dependencies -->
 
