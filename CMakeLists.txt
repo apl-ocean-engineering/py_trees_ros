@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib
   rospy
   actionlib_msgs
+  dynamic_reconfigure
   geometry_msgs
   sensor_msgs
   std_msgs
@@ -14,3 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_python_setup()
+
+generate_dynamic_reconfigure_options(
+  cfg/Behaviours.cfg
+)

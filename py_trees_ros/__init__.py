@@ -25,7 +25,7 @@ from . import exceptions
 # from . import publishers
 # from . import subscribers
 # from . import transforms
-# from . import trees
+from . import trees
 from . import utilities
 from . import visitors
 

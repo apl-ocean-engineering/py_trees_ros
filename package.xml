@@ -47,6 +47,7 @@
   <depend>rospy</depend>
 
   <!-- behaviour dependencies (subscribers, transforms, ...) -->
+  <depend>dynamic_reconfigure</depend>
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
 

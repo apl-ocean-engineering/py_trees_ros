@@ -43,7 +43,7 @@ def find_service(
     service_type: str,
     namespace: typing.Optional[str] = None,
     timeout: float = 0.5,
-):
+) -> str:
     """
     Discover a service of the specified type and if necessary, under the specified
     namespace.
@@ -363,59 +363,54 @@ class Publishers(object):
 #         return response
 
 
-# class Services(object):
-#     """
-#     Utility class that groups services together in one convenient structure.
+class Services(object):
+    """
+    Utility class that groups services together in one convenient structure.
 
-#     Args:
-#         service_details (obj:`tuple`): list of (str, str, srvType, func) tuples representing
-#                                   (unique_name, topic_name, service_type, callback)
-#                                   specifications for creating services
+    Args:
+        service_details (obj:`tuple`): list of (str, str, srvType, func) tuples representing
+                                  (unique_name, topic_name, service_type, callback)
+                                  specifications for creating services
 
-#     Examples:
-#         Convert the incoming list of specifications into proper variables of this class.
+    Examples:
+        Convert the incoming list of specifications into proper variables of this class.
 
-#         .. code-block:: python
+        .. code-block:: python
 
-#            services = py_trees.utilities.Services(
-#                [
-#                    ('open_foo', '~/get_foo', foo_interfaces.srv.OpenFoo, open_foo_callback),
-#                    ('open_foo', '/foo/open', foo_interfaces.srv.OpenFoo, self.open_foo_callback),
-#                    ('get_foo_bar', '/foo/bar', foo_interfaces.srv.GetBar, self.foo.get_bar_callback),
-#                ]
-#            )
-#     """
+           services = py_trees.utilities.Services(
+               [
+                   ('open_foo', '~/get_foo', foo_interfaces.srv.OpenFoo, open_foo_callback),
+                   ('open_foo', '/foo/open', foo_interfaces.srv.OpenFoo, self.open_foo_callback),
+                   ('get_foo_bar', '/foo/bar', foo_interfaces.srv.GetBar, self.foo.get_bar_callback),
+               ]
+           )
+    """
 
-#     def __init__(self, node, service_details, introspection_topic_name="services"):
-#         # TODO: check for the correct setting of subscriber_details
-#         self.service_details_msg = []
-#         for name, service_name, service_type, callback in service_details:
-#             self.__dict__[name] = node.create_service(
-#                 srv_type=service_type,
-#                 srv_name=service_name,
-#                 callback=callback,
-#                 qos_profile=rclpy.qos.qos_profile_services_default,
-#             )
-#             resolved_name = resolve_name(node, service_name)
-#             service_type = (
-#                 service_type.__class__.__module__.split(".")[0]
-#                 + "/"
-#                 + service_type.__class__.__name__
-#             )
-#             self.service_details_msg.append(
-#                 py_trees_msgs.ServiceDetails(
-#                     service_name=resolved_name,
-#                     service_type=service_type,
-#                 )
-#             )
+    def __init__(self, service_details, introspection_topic_name="services"):
+        # TODO: check for the correct setting of subscriber_details
+        self.service_details_msg = []
+        for name, service_name, service_type, callback in service_details:
+            self.__dict__[name] = rospy.Service(service_name, service_type, callback)
+            resolved_name = self.__dict__[name].resolved_name
+            service_type = (
+                service_type.__class__.__module__.split(".")[0]
+                + "/"
+                + service_type.__class__.__name__
+            )
+            self.service_details_msg.append(
+                py_trees_msgs.ServiceDetails(
+                    service_name=resolved_name,
+                    service_type=service_type,
+                )
+            )
 
-#         self.introspection_service = rospy.Service(
-#             "~/introspection/" + introspection_topic_name,
-#             py_trees_srvs.IntrospectServices,
-#             self.introspection_callback,
-#         )
+        self.introspection_service = rospy.Service(
+            "~/introspection/" + introspection_topic_name,
+            py_trees_srvs.IntrospectServices,
+            self.introspection_callback,
+        )
 
-#     def introspection_callback(self, unused_request):
-#         response = py_trees_srvs.IntrospectServicesResponse()
-#         response.subscriber_details = self.subscriber_details_msg
-#         return response
+    def introspection_callback(self, unused_request):
+        response = py_trees_srvs.IntrospectServicesResponse()
+        response.subscriber_details = self.subscriber_details_msg
+        return response
