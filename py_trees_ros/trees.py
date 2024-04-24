@@ -710,8 +710,9 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
     def _close_snapshot_stream(
         self,
         request: py_trees_srvs.CloseSnapshotStreamRequest,  # noqa
-        response: py_trees_srvs.CloseSnapshotStreamResponse,  # noqa
     ) -> py_trees_srvs.CloseSnapshotStreamResponse:
+
+        response = py_trees_srvs.CloseSnapshotStreamResponse()
         response.result = True
         try:
             self.snapshot_streams[request.topic_name].shutdown()
@@ -725,7 +726,6 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
     def _open_snapshot_stream(
         self,
         request: py_trees_srvs.OpenSnapshotStreamRequest,  # noqa
-        response: py_trees_srvs.OpenSnapshotStreamResponse,  # noqa
     ) -> py_trees_srvs.OpenSnapshotStreamResponse:
         snapshot_stream = SnapshotStream(
             topic_name=request.topic_name,
@@ -738,14 +738,16 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
         if snapshot_stream.parameters.blackboard_activity:
             self.blackboard_exchange.register_activity_stream_client()
         self.snapshot_streams[snapshot_stream.topic_name] = snapshot_stream
+
+        response = py_trees_srvs.OpenSnapshotStreamResponse()
         response.topic_name = snapshot_stream.topic_name
         return response
 
     def _reconfigure_snapshot_stream(
         self,
         request: py_trees_srvs.ReconfigureSnapshotStreamRequest,  # noqa
-        response: py_trees_srvs.ReconfigureSnapshotStreamResponse,  # noqa
     ) -> py_trees_srvs.ReconfigureSnapshotStreamResponse:
+        response = py_trees_srvs.ReconfigureSnapshotStreamResponse()
         response.result = True
         try:
             snapshot_stream = self.snapshot_streams[request.topic_name]
@@ -831,8 +833,8 @@ class Watcher(object):
 
         self.service_names: Dict[str, Optional[str]] = {"open": None, "close": None}
         self.service_type_strings = {
-            "open": "py_trees_ros_interfaces/srv/OpenSnapshotStream",
-            "close": "py_trees_ros_interfaces/srv/CloseSnapshotStream",
+            "open": "py_trees_ros_interfaces.srv.OpenSnapshotStream",
+            "close": "py_trees_ros_interfaces.srv.CloseSnapshotStream",
         }
         self.service_types = {
             "open": py_trees_srvs.OpenSnapshotStream,

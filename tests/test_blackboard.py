@@ -13,8 +13,9 @@ import threading
 
 import py_trees
 import py_trees.console as console
-import py_trees_ros
 import rclpy
+
+import py_trees_ros
 
 ##############################################################################
 # Helpers
@@ -26,11 +27,16 @@ def assert_banner():
 
 
 def assert_details(text, expected, result):
-    print(console.green + text +
-          "." * (40 - len(text)) +
-          console.cyan + "{}".format(expected) +
-          console.yellow + " [{}]".format(result) +
-          console.reset)
+    print(
+        console.green
+        + text
+        + "." * (40 - len(text))
+        + console.cyan
+        + "{}".format(expected)
+        + console.yellow
+        + " [{}]".format(result)
+        + console.reset
+    )
 
 
 def setup_module(module):
@@ -41,6 +47,7 @@ def setup_module(module):
 def teardown_module(module):
     console.banner("ROS Shutdown")
     rclpy.shutdown()
+
 
 ##############################################################################
 # Tests
@@ -53,10 +60,10 @@ def test_blackboard_pickle():
     print("Set 'foo' to a thread lock object")
     py_trees.blackboard.Blackboard.set("foo", threading.Lock())
     print("Create Sub Blackboard")
-    sub_blackboard = py_trees_ros.blackboard.SubBlackboard(node=node)
+    sub_blackboard = py_trees_ros.blackboard.SubBlackboard()
     print("Update with warning - will raise exceptions if pickle errors are not caught")
     sub_blackboard.update({"foo"})
-    assert(True)
+    assert True
     print("Update Quietly")
     sub_blackboard.update({"foo"})
-    assert(True)
+    assert True
