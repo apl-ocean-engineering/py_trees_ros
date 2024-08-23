@@ -28,7 +28,7 @@
   <doc_depend>python3-sphinx-rtd-theme</doc_depend>
 
   <!-- core dependencies -->
-  <depend>py_trees</depend>
+  <!-- <depend>py_trees</depend> -->
   <depend>py_trees_ros_interfaces</depend>
   <depend>std_msgs</depend>
 
